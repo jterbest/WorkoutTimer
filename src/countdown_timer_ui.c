@@ -61,34 +61,43 @@ static void window_unload(Window *window) {
 }
 
 void refresh_countdown_timer(void) {
-  PCountdownTimer timer_def = window_get_user_data(window);
-  if (timer_def->is_running) {
-    update_countdown_time(timer_def->current_time_sec);
+  PTimerState timer_state = window_get_user_data(window);
+  if (timer_state->is_running) {
+    update_countdown_time(timer_state->current_time_sec);
   } else {
     text_layer_set_text(countdown_time_layer, "--");
   }
 }
 
 void refresh_header_footer(void) {
-  PCountdownTimer timer_def = window_get_user_data(window);
-  text_layer_set_text(header_layer, timer_def->header);
-  text_layer_set_text(footer_layer, timer_def->footer);
+  PTimerState timer_state = window_get_user_data(window);
+  text_layer_set_text(header_layer, timer_state->header);
+  text_layer_set_text(footer_layer, timer_state->footer);
+}
+
+static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
+  PTimerState timer_state = (PTimerState)context;
+  PTimerHandlers timer_handlers = timer_state->handlers;
+  
+  timer_handlers->timer_select_button_handler();
+  
+  refresh_countdown_timer();
+  refresh_header_footer();
 }
 
 static void countdown_timer_click_provider(Window *window) {
-  PCountdownTimer timer_def = window_get_user_data(window);
-  window_single_click_subscribe(BUTTON_ID_SELECT, timer_def->select_click);
+  window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
 }
 
-void show_countdown_timer_ui(PCountdownTimer timer_def) {
+void show_countdown_timer_ui(PTimerState timer_state) {
   window = window_create();
   WindowHandlers handlers = {
     .load = window_load,
     .unload = window_unload
   };
-  window_set_user_data(window, timer_def);
+  window_set_user_data(window, timer_state);
   window_set_window_handlers(window, handlers);
-  window_set_click_config_provider(window, (ClickConfigProvider)countdown_timer_click_provider);
+  window_set_click_config_provider_with_context(window, (ClickConfigProvider)countdown_timer_click_provider, timer_state);
   window_stack_push(window, true);
 }
 

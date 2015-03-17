@@ -11,3 +11,13 @@ typedef struct {
 } TimerHandlers;
 
 typedef TimerHandlers* PTimerHandlers;
+
+typedef struct {
+  char* header;
+  char* footer;
+  int current_time_sec;
+  bool is_running;
+  PTimerHandlers handlers;
+} TimerState;
+
+typedef TimerState* PTimerState;

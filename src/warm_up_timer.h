@@ -5,5 +5,4 @@
 void warm_up_select_clicked(void);
 void warm_up_time_expire(void);
 void warm_up_reset(void);
-PCountdownTimer create_warm_up_timer(void);
-PTimerHandlers create_warm_up_handlers(void);
+PTimerState create_warm_up_timer(void);
