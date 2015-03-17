@@ -1,0 +1,17 @@
+{
+  "uuid": "5fca550c-28e4-410b-b664-13915bf151c5",
+  "shortName": "WorkoutTimer",
+  "longName": "WorkoutTimer",
+  "companyName": "Jason TerBest",
+  "versionCode": 1,
+  "versionLabel": "1.0",
+  "watchapp": {
+    "watchface": false
+  },
+  "appKeys": {
+    "dummy": 0
+  },
+  "resources": {
+    "media": []
+  }
+}
