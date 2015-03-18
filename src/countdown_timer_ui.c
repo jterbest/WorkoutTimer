@@ -88,7 +88,11 @@ void refresh_countdown_timer(void) {
   if (timer_state->is_running) {
     update_countdown_time(timer_ui);
   } else {
-    text_layer_set_text(timer_ui->countdown_time_layer, "--");
+    if (timer_state->stopped_counter_text == NULL) {
+      text_layer_set_text(timer_ui->countdown_time_layer, "--");
+    } else {
+      text_layer_set_text(timer_ui->countdown_time_layer, timer_state->stopped_counter_text);
+    }
   }
 }
 

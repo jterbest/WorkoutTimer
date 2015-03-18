@@ -17,6 +17,7 @@ typedef TimerHandlers* PTimerHandlers;
 typedef struct {
   char* header;
   char* footer;
+  char* stopped_counter_text;
   int current_time_sec;
   bool is_running;
   PTimerHandlers handlers;
