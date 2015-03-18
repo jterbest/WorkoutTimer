@@ -41,8 +41,17 @@ static TextLayer* create_countdown_time_layer() {
 static void update_countdown_time(PTimerUI timer_ui) {
   PTimerState timer_state = timer_ui->timer_state;
   static char counter_text[5];
-  snprintf(counter_text, sizeof(counter_text), "%d", timer_state->current_time_sec);
+  int min = timer_state->current_time_sec / 60;
+  int sec = timer_state->current_time_sec % 60;
+  snprintf(counter_text, sizeof(counter_text), "%d:%02d", min, sec);
   text_layer_set_text(timer_ui->countdown_time_layer, counter_text);
+}
+
+static void refresh_header_footer(void) {
+  Window *window = window_stack_get_top_window();
+  PTimerUI timer_ui = window_get_user_data(window);
+  text_layer_set_text(timer_ui->header_layer, timer_ui->timer_state->header);
+  text_layer_set_text(timer_ui->footer_layer, timer_ui->timer_state->footer);
 }
 
 static void window_load(Window *window) {
@@ -81,13 +90,6 @@ void refresh_countdown_timer(void) {
   } else {
     text_layer_set_text(timer_ui->countdown_time_layer, "--");
   }
-}
-
-void refresh_header_footer(void) {
-  Window *window = window_stack_get_top_window();
-  PTimerUI timer_ui = window_get_user_data(window);
-  text_layer_set_text(timer_ui->header_layer, timer_ui->timer_state->header);
-  text_layer_set_text(timer_ui->footer_layer, timer_ui->timer_state->footer);
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {

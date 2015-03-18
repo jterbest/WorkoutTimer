@@ -6,10 +6,14 @@
 #define RUNNING_FOOTER_MSG  "Select to stop"
 #define RESET_TIME_SEC      150
 
+static void select_clicked(void);
+static void timer_reset(void);
+static void timer_expire(void);
+
 TimerHandlers rest_handlers = {
-  .timer_expire_handler = rest_time_expire,
-  .timer_reset_handler = rest_reset,
-  .timer_select_button_handler = rest_select_clicked
+  .timer_expire_handler = timer_expire,
+  .timer_reset_handler = timer_reset,
+  .timer_select_button_handler = select_clicked
 };
 
 TimerState rest_timer = {
@@ -20,9 +24,9 @@ TimerState rest_timer = {
   .handlers = &rest_handlers
 };
 
-void rest_select_clicked(void) {
+static void select_clicked(void) {
   if (!rest_timer.is_running) {
-    rest_reset();
+    timer_reset();
     rest_timer.footer = RUNNING_FOOTER_MSG;
   } else {
     rest_timer.footer = STOPPED_FOOTER_MSG;
@@ -31,11 +35,11 @@ void rest_select_clicked(void) {
   rest_timer.is_running = !rest_timer.is_running;
 }
 
-void rest_reset(void) {
+static void timer_reset(void) {
   rest_timer.current_time_sec = RESET_TIME_SEC;
 }
 
-void rest_time_expire(void) {
+static void timer_expire(void) {
   vibes_long_pulse();
   rest_timer.is_running = false;
 }

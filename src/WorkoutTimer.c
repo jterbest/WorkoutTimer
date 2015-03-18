@@ -2,8 +2,9 @@
 #include "countdown_timer_ui.h"
 #include "warm_up_timer.h"
 #include "rest_timer.h"
+#include "weights_timer.h"
 
-#define NUMBER_OF_TIMERS 2
+#define NUMBER_OF_TIMERS 3
 
 static PTimerState current_timer;
 static PTimerState timers[NUMBER_OF_TIMERS];
@@ -18,6 +19,9 @@ static void tick_handler(struct tm *tick_time, TimeUnits units) {
   if (current_timer->current_time_sec < 1) {
     timer_handlers->timer_expire_handler();
   }
+  
+  if (timer_handlers->timer_tick_notify_handler != NULL)
+    timer_handlers->timer_tick_notify_handler();
   
   refresh_countdown_timer();
 }
@@ -37,6 +41,7 @@ static void init() {
   active_timer_index = -1;
   timers[0] = create_warm_up_timer();
   timers[1] = create_rest_timer();
+  timers[2] = create_weights_timer();
   
   ShowNextTimer();
   
