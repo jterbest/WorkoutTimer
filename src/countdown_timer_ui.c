@@ -1,10 +1,15 @@
 #include <pebble.h>
 #include "countdown_timer_ui.h"
 
-static Window *window;
-static TextLayer *header_layer;
-static TextLayer *footer_layer;
-static TextLayer *countdown_time_layer;
+typedef struct {
+  TextLayer *header_layer;
+  TextLayer *footer_layer;
+  TextLayer *countdown_time_layer;
+  ShowNextTimerHandler next_timer_handler;
+  PTimerState timer_state;
+} TimerUI;
+
+typedef TimerUI* PTimerUI;
 
 static TextLayer* create_header_layer() {
   TextLayer *layer = text_layer_create(GRect(0,0,144,25));
@@ -33,50 +38,61 @@ static TextLayer* create_countdown_time_layer() {
   return layer;
 }
 
-static void update_countdown_time(int current_time_sec) {
+static void update_countdown_time(PTimerUI timer_ui) {
+  PTimerState timer_state = timer_ui->timer_state;
   static char counter_text[5];
-  snprintf(counter_text, sizeof(counter_text), "%d", current_time_sec);
-  text_layer_set_text(countdown_time_layer, counter_text);
+  snprintf(counter_text, sizeof(counter_text), "%d", timer_state->current_time_sec);
+  text_layer_set_text(timer_ui->countdown_time_layer, counter_text);
 }
 
 static void window_load(Window *window) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "loading window");
+  PTimerUI timer_ui = window_get_user_data(window);
   Layer *window_layer = window_get_root_layer(window);
   
-  header_layer = create_header_layer();
-  countdown_time_layer = create_countdown_time_layer();
-  footer_layer = create_footer_layer();
+  timer_ui->header_layer = create_header_layer();
+  timer_ui->countdown_time_layer = create_countdown_time_layer();
+  timer_ui->footer_layer = create_footer_layer();
   
   refresh_header_footer();
   refresh_countdown_timer();
   
-  layer_add_child(window_layer, text_layer_get_layer(header_layer));
-  layer_add_child(window_layer, text_layer_get_layer(countdown_time_layer));
-  layer_add_child(window_layer, text_layer_get_layer(footer_layer));
+  layer_add_child(window_layer, text_layer_get_layer(timer_ui->header_layer));
+  layer_add_child(window_layer, text_layer_get_layer(timer_ui->countdown_time_layer));
+  layer_add_child(window_layer, text_layer_get_layer(timer_ui->footer_layer));
 }
 
 static void window_unload(Window *window) {
-  text_layer_destroy(header_layer);
-  text_layer_destroy(countdown_time_layer);
-  text_layer_destroy(footer_layer);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "unloading window");
+  PTimerUI timer_ui = window_get_user_data(window);
+  
+  text_layer_destroy(timer_ui->header_layer);
+  text_layer_destroy(timer_ui->countdown_time_layer);
+  text_layer_destroy(timer_ui->footer_layer);
 }
 
 void refresh_countdown_timer(void) {
-  PTimerState timer_state = window_get_user_data(window);
+  Window *window = window_stack_get_top_window();
+  PTimerUI timer_ui = window_get_user_data(window);
+  PTimerState timer_state = timer_ui->timer_state;
+  
   if (timer_state->is_running) {
-    update_countdown_time(timer_state->current_time_sec);
+    update_countdown_time(timer_ui);
   } else {
-    text_layer_set_text(countdown_time_layer, "--");
+    text_layer_set_text(timer_ui->countdown_time_layer, "--");
   }
 }
 
 void refresh_header_footer(void) {
-  PTimerState timer_state = window_get_user_data(window);
-  text_layer_set_text(header_layer, timer_state->header);
-  text_layer_set_text(footer_layer, timer_state->footer);
+  Window *window = window_stack_get_top_window();
+  PTimerUI timer_ui = window_get_user_data(window);
+  text_layer_set_text(timer_ui->header_layer, timer_ui->timer_state->header);
+  text_layer_set_text(timer_ui->footer_layer, timer_ui->timer_state->footer);
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
-  PTimerState timer_state = (PTimerState)context;
+  PTimerUI timer_ui = (PTimerUI)context;
+  PTimerState timer_state = timer_ui->timer_state;
   PTimerHandlers timer_handlers = timer_state->handlers;
   
   timer_handlers->timer_select_button_handler();
@@ -85,22 +101,41 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   refresh_header_footer();
 }
 
-static void countdown_timer_click_provider(Window *window) {
-  window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
+static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
+  PTimerUI timer_ui = (PTimerUI)context;
+  if (!timer_ui->timer_state->is_running)
+    timer_ui->next_timer_handler();
 }
 
-void show_countdown_timer_ui(PTimerState timer_state) {
-  window = window_create();
+static void countdown_timer_click_provider(Window *window) {
+  window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
+  window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
+}
+
+void show_countdown_timer_ui(PTimerState timer_state, ShowNextTimerHandler handler) {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "showing window");
+  PTimerUI timer_ui = malloc(sizeof(TimerUI));
+  timer_ui->timer_state = timer_state;
+  timer_ui->next_timer_handler = handler;
+  
+  Window *window = window_create();
   WindowHandlers handlers = {
     .load = window_load,
     .unload = window_unload
   };
-  window_set_user_data(window, timer_state);
+  
+  window_set_user_data(window, timer_ui);
   window_set_window_handlers(window, handlers);
-  window_set_click_config_provider_with_context(window, (ClickConfigProvider)countdown_timer_click_provider, timer_state);
+  window_set_click_config_provider_with_context(window, (ClickConfigProvider)countdown_timer_click_provider, timer_ui);
   window_stack_push(window, true);
 }
 
 void hide_countdown_timer_ui(void) {
-  window_destroy(window);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "hiding window");
+  Window *window = window_stack_pop(true);
+  if (window != NULL) {
+    window_destroy(window);
+    PTimerUI timer_ui = window_get_user_data(window);
+    free(timer_ui);
+  }
 }
