@@ -1,6 +1,8 @@
 #include <pebble.h>
 #include "countdown_timer_ui.h"
 
+#define LONG_CLICK_TIME_MS  1000
+
 typedef struct {
   TextLayer *header_layer;
   TextLayer *footer_layer;
@@ -99,9 +101,22 @@ void refresh_countdown_timer(void) {
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   PTimerUI timer_ui = (PTimerUI)context;
   PTimerState timer_state = timer_ui->timer_state;
-  PTimerHandlers timer_handlers = timer_state->handlers;
+  PTimerHandlers timer_handlers = &timer_state->handlers;
   
-  timer_handlers->timer_select_button_handler();
+  if (timer_handlers->timer_select_button_handler != NULL)
+    timer_handlers->timer_select_button_handler(timer_state);
+  
+  refresh_countdown_timer();
+  refresh_header_footer();
+}
+
+static void long_select_click_handler(ClickRecognizerRef recognizer, void *context) {
+  PTimerUI timer_ui = (PTimerUI)context;
+  PTimerState timer_state = timer_ui->timer_state;
+  PTimerHandlers timer_handlers = &timer_state->handlers;
+  
+  if (timer_handlers->timer_long_select_button_handler != NULL)
+    timer_handlers->timer_long_select_button_handler(timer_state);
   
   refresh_countdown_timer();
   refresh_header_footer();
@@ -116,6 +131,7 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
 static void countdown_timer_click_provider(Window *window) {
   window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
   window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
+  window_long_click_subscribe(BUTTON_ID_SELECT, LONG_CLICK_TIME_MS, long_select_click_handler, NULL);
 }
 
 void show_countdown_timer_ui(PTimerState timer_state, ShowNextTimerHandler handler) {
