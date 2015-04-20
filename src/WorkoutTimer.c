@@ -3,12 +3,15 @@
 #include "warm_up_timer.h"
 #include "rest_timer.h"
 #include "weights_timer.h"
+#include "isometric_timer.h"
 
-#define NUMBER_OF_TIMERS 3
+#define NUMBER_OF_TIMERS 4
 
 static PTimerState current_timer;
 static PTimerState *timers;
 static int active_timer_index;
+
+static void ShowPrevTimer(void);
 
 static void tick_handler(struct tm *tick_time, TimeUnits units) {
   if (!current_timer->is_running)
@@ -26,8 +29,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units) {
   refresh_countdown_timer();
 }
 
-static void ShowNextTimer(void)
-{
+static void ShowNextTimer(void) {
   active_timer_index++;
   if (active_timer_index > NUMBER_OF_TIMERS-1) {
     active_timer_index = 0;
@@ -35,7 +37,19 @@ static void ShowNextTimer(void)
   current_timer = timers[active_timer_index];
   
   hide_countdown_timer_ui();
-  show_countdown_timer_ui(current_timer, ShowNextTimer);
+  show_countdown_timer_ui(current_timer, ShowNextTimer, ShowPrevTimer);
+}
+
+static void ShowPrevTimer(void) {
+  active_timer_index--;
+  if (active_timer_index < 0) {
+    active_timer_index = NUMBER_OF_TIMERS-1;
+  }
+  
+  current_timer = timers[active_timer_index];
+  
+  hide_countdown_timer_ui();
+  show_countdown_timer_ui(current_timer, ShowNextTimer, ShowPrevTimer);
 }
 
 static void init() {
@@ -49,6 +63,7 @@ static void init() {
   create_warm_up_timer(timers[0]);
   create_rest_timer(timers[1]);
   create_weights_timer(timers[2]);
+  create_isometric_timer(timers[3]);
   
   ShowNextTimer();
   

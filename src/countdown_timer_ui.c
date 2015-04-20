@@ -8,6 +8,7 @@ typedef struct {
   TextLayer *footer_layer;
   TextLayer *countdown_time_layer;
   ShowNextTimerHandler next_timer_handler;
+  ShowPrevTimerHandler prev_timer_handler;
   PTimerState timer_state;
 } TimerUI;
 
@@ -128,17 +129,42 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
     timer_ui->next_timer_handler();
 }
 
+static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
+  PTimerUI timer_ui = (PTimerUI)context;
+  if (!timer_ui->timer_state->is_running)
+    timer_ui->prev_timer_handler();
+}
+
+static void back_click_handler(ClickRecognizerRef recognizer, void *context) {
+  PTimerUI timer_ui = (PTimerUI)context;
+  
+  if (timer_ui->timer_state->is_running)
+    return;
+  
+  PTimerState timer_state = timer_ui->timer_state;
+  PTimerHandlers timer_handlers = &timer_state->handlers;
+  
+  if (timer_handlers->timer_back_button_handler != NULL)
+    timer_handlers->timer_back_button_handler(timer_state);
+  
+  refresh_countdown_timer();
+  refresh_header_footer();
+}
+
 static void countdown_timer_click_provider(Window *window) {
   window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
   window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
   window_long_click_subscribe(BUTTON_ID_SELECT, LONG_CLICK_TIME_MS, long_select_click_handler, NULL);
+  window_single_click_subscribe(BUTTON_ID_BACK, back_click_handler);
+  window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
 }
 
-void show_countdown_timer_ui(PTimerState timer_state, ShowNextTimerHandler handler) {
+void show_countdown_timer_ui(PTimerState timer_state, ShowNextTimerHandler next_handler, ShowPrevTimerHandler prev_handler) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "showing window");
   PTimerUI timer_ui = malloc(sizeof(TimerUI));
   timer_ui->timer_state = timer_state;
-  timer_ui->next_timer_handler = handler;
+  timer_ui->next_timer_handler = next_handler;
+  timer_ui->prev_timer_handler = prev_handler;
   
   Window *window = window_create();
   WindowHandlers handlers = {

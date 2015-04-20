@@ -2,6 +2,7 @@
 #include "timer.h"
 
 typedef void (*ShowNextTimerHandler)(void);
+typedef void (*ShowPrevTimerHandler)(void);
 
 /**
  * \brief Display a new window with the specified timer.
@@ -10,7 +11,7 @@ typedef void (*ShowNextTimerHandler)(void);
  * \param handler The callback function that will advance to next window
  *
  */
-void show_countdown_timer_ui(PTimerState timer_state, ShowNextTimerHandler handler);
+void show_countdown_timer_ui(PTimerState timer_state, ShowNextTimerHandler next_handler, ShowPrevTimerHandler prev_handler);
 
 /**
  * \brief Hide the top-most timer window

@@ -10,6 +10,7 @@ typedef void (*TimerResetHandler)(PTimerState timer);
 typedef void (*TimerSelectButtonHandler)(PTimerState timer);
 typedef void (*TimerLongSelectButtonHandler)(PTimerState timer);
 typedef void (*TimerTickNotifyHandler)(PTimerState timer);
+typedef void (*TimerBackButtonHandler)(PTimerState timer);
 
 /**
  * \brief Callback handlers that define the timer-specific behavior.
@@ -21,6 +22,7 @@ struct TimerHandlers {
   TimerSelectButtonHandler timer_select_button_handler;
   TimerLongSelectButtonHandler timer_long_select_button_handler;
   TimerTickNotifyHandler timer_tick_notify_handler;
+  TimerBackButtonHandler timer_back_button_handler;
 };
 
 /**
