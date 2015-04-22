@@ -16,6 +16,7 @@ Weights
 --------
 This timer is to help keep track of the number of strength training sets and manage the cooldown between them.
 It will give a "get ready" vibrate alert when 10 seconds remain and one long vibrate alert when to begin.
+Selecting the back button will reset the set count and enter a longer activity cooldown.
 
 Isometric
 ---------
